@@ -4,12 +4,6 @@
 
 #include "server.h"
 #include <boost/bind.hpp>
-#include "error_code.h"
-
-
-#ifndef DD
-#define DD     std::cout<<__FILE__<<__LINE__<<std::endl
-#endif
 
 using namespace boost::system;
 
@@ -148,27 +142,12 @@ void server::set_session_close_callback(session::callback callback)
     session_close_callback_ = callback;
 }
 
-boost::system::error_code server::set_session_procedure_callback(session::callback callback, const uint32_t interval_msec)
-{
-    boost::system::error_code ec;
-    if (interval_msec == 0 || !callback)
-    {
-        return ::errc::make_error_code(::errc::invalid_argument);
-    }
-    session_procedure_callback_interval_msec_ = interval_msec;
-    session_procedure_callback_ = callback;
-}
-
 void server::set_session_callback(session* s)
 {
     s->set_async_start_callback(session_start_callback_);
     s->set_async_read_callback(session_read_callback_);
     s->set_async_write_callback(session_write_callback_);
     s->set_async_close_callback(session_close_callback_);
-    if (session_procedure_callback_ && session_procedure_callback_interval_msec_ > 0)
-    {
-//        s->set_async_procedure_callback(session_procedure_callback_, session_procedure_callback_interval_msec_);
-    }
 }
 
 boost::system::error_code server::start(const std::string& host, const std::string& service)
@@ -296,41 +275,6 @@ void server::async_accept_callback(const boost::system::error_code& ec)
     }
 }
 
-boost::system::error_code server::set_procedure_callback(callback callback, const uint32_t interval_msec)
-{
-    ec_.clear();
-    if (interval_msec == 0 || !callback)
-    {
-        ec_ = ::errc::make_error_code(::errc::invalid_argument);
-        return ec_;
-    }
-    async_procedure_interval_msec_ = interval_msec;
-    async_procedure_callback_ = callback;
-    return ec_;
-}
-
-void server::async_procedure_callback(const boost::system::error_code& ec)
-{
-    if (async_procedure_callback_)
-    {
-        async_procedure_callback_(this, ec);
-    }
-    if (ec)
-    {
-        ec_ = ec;
-        io_.stop();
-        return;
-    }
-    boost::system::error_code ec2;
-    timer_->expires_from_now(boost::posix_time::milliseconds(async_procedure_interval_msec_), ec2);
-    if (ec2)
-    {
-        ec_ = ec2;
-        io_.stop();
-        return;
-    }
-    timer_->async_wait(boost::bind(&server::async_procedure_callback, this, boost::asio::placeholders::error));
-}
 SessionManager& server::GetSessionManager() {
   return session_manager_;
 }

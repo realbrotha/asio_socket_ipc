@@ -22,14 +22,11 @@ class server {
   server(io_context &io, ssl_context &context);
   virtual ~server();
 
-  boost::system::error_code get_lastest_error_code() const;
   void refresh_session_list(uint32_t timeout_sec = 0);
   std::list<session *> &get_session_list();
   ssl_info *get_ssl_info() const;
   void force_stop();
   boost::system::error_code start(const std::string &host, const std::string &service);
-  boost::system::error_code set_procedure_callback(callback callback, const uint32_t interval_msec);
-  void async_procedure_callback(const boost::system::error_code &ec);
 
   // set session callback
   void set_session_start_callback(session::callback callback);
@@ -63,8 +60,6 @@ class server {
   session::io_callback session_read_callback_;
   session::io_callback session_write_callback_;
   session::callback session_close_callback_;
-  uint32_t session_procedure_callback_interval_msec_;
-  session::callback session_procedure_callback_;
 };
 
 } // namespace network
